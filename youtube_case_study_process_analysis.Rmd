@@ -1,0 +1,158 @@
+---
+title: "YouTube Case Study"
+author: "Jade Thornton"
+date: "2023-08-24"
+output: html_document
+---
+
+# Process
+
+I will use R to finish cleaning my data set.
+
+```{r}
+# loading libraries needed for cleaning and analysis
+library(tidyverse)
+library(janitor)
+library(sqldf)
+library(ggplot2)
+```
+
+```{r}
+# reading fixed data set and creating a data frame named "df_yt"
+df_yt <- read_csv("youtube_stats_edited.csv")
+```
+
+```{r}
+# cleaning up column names and checking to see if the data set imported properly
+df_yt <- clean_names(df_yt)
+head(df_yt, 10)
+```
+
+Looking at the tibble, we can see that some of the most subscribed channels have 0 recorded video views, due to these being special channels for hosting music and movies. This data will skew analysis results so I will remove these rows.
+
+```{r}
+# dropping all rows which have 0 video views
+df_yt <- df_yt[-(which(df_yt$video_views == 0)),]
+head(df_yt, 10)
+```
+
+The channel join dates are split into three different columns, so I will combine them into a new one with a date format.
+
+```{r}
+# creating a new date column
+df_yt$date_joined <- dmy(paste(df_yt$created_date, df_yt$created_month, df_yt$created_year))
+# running a query to check if the new column was created properly
+sqldf('SELECT youtuber, date_joined FROM df_yt LIMIT 10')
+```
+
+Next I will remove columns that are no longer necessary for our analysis, including the now redundant day, month, and year joined columns.
+
+```{r}
+# removing columns we don't need
+df_yt <- subset(df_yt, select = -c(created_year, created_month, created_date, video_views_rank, country_rank, channel_type_rank, video_views_for_the_last_30_days, gross_tertiary_education_enrollment_percent, population, unemployment_rate, urban_population, latitude, longitude))
+head(df_yt)
+```
+
+This data still contains a lot of NaN values. I don't want to completely remove each row with missing data as I believe they will be necessary for different parts of the analysis.
+
+For categorical data, such as the country names and channel types, I will create a new group called "Unassigned".
+
+```{r}
+# changing our "nan" values to "Unassigned"
+df_yt <- df_yt %>%
+  mutate_at(c('category','channel_type','country','abbreviation'),funs(ifelse(. == 'nan', 'Unassigned', .)))
+head(df_yt, 10)
+```
+
+Fixing the "NaN" values for quantitative columns is a bit trickier. Instead of replacing missing data with 0, my solution will be to change these values to standard nulls. I will ignore the null data in my analysis.
+
+```{r}
+# changing NaN values to standard nulls
+df_yt<- df_yt %>%
+  mutate(across(everything(), ~replace_na(.x,NA)))
+head(df_yt, 10)
+```
+
+
+# Analysis
+
+Now that the data is cleaned, I can start to analyze it.
+
+Because one of our business questions is to find out how the frequency of uploads impacts subscriber gains, I will need to find the average number of videos a channel uploads each week and the average subscribers gained each week.
+
+```{r}
+# New column is made finding average uploads per week by finding difference between a channel's start date and July 28, 2023
+df_yt$average_weekly_uploads <- round(df_yt$uploads/as.double(difftime('2023-07-28', df_yt$date_joined, units = c("weeks"))), digits = 0)
+# Same method used to find average subscribers gained each week
+df_yt$average_weekly_subscribers <- round(df_yt$subscribers/as.double(difftime('2023-07-28', df_yt$date_joined, units = c("weeks"))), digits = 0)
+head(df_yt, 10)
+```
+
+```{r}
+# running query to see the upload frequency of the channels with the highest average subscribers per week
+sqldf('SELECT youtuber, average_weekly_subscribers, average_weekly_uploads FROM df_yt ORDER BY average_weekly_subscribers DESC LIMIT 20')
+```
+
+
+```{r}
+# creating scatter plot
+ggplot(df_yt, aes(x = average_weekly_subscribers, y = average_weekly_uploads)) +
+  # y limit set to 100 to exclude outliers and better see our trend
+  ylim(0, 600) +
+  geom_jitter(na.rm = TRUE) +
+  geom_smooth(formula = y ~ x, method = lm, color = "red", se = TRUE, na.rm = TRUE)
+```
+
+Our trend shows that there is barely a correlation between the amount of weekly uploads and subscribers gained. Plenty of channels uploading frequently are getting less subscribers than ones that do. QWERTY Media should focus on creating quality content over mass uploads.
+
+In order to find out which channel types are currently popular, I will find the distribution of subscribers gained in the past month for each channel type. 
+
+```{r}
+ggplot(df_yt, aes(x = subscribers_for_last_30_days, y = channel_type, fill = channel_type)) +
+  geom_boxplot(alpha = 1, position = position_dodge(1), na.rm = TRUE) +
+  # zooming into our plot because of extreme outliers to get a closer look at our box plots
+  coord_cartesian(xlim = quantile(df_yt$subscribers_for_last_30_days, c(0.08, 0.98), na.rm = TRUE))
+```
+
+
+The channel type with the highest distribution is Animals, with Comedy and People the next highest. Notably, Entertainment has several extreme outliers.  
+
+To find out which channel types make the most money, I will find the average yearly earnings for each channel.
+
+```{r}
+# creating new column finding average between highest and lowest yearly earnings
+df_yt$average_yearly_earnings <- rowMeans(df_yt[,c("lowest_yearly_earnings","highest_yearly_earnings")], na.rm = TRUE)
+sqldf('SELECT youtuber, channel_type, lowest_yearly_earnings, highest_yearly_earnings, average_yearly_earnings FROM df_yt ORDER BY average_yearly_earnings DESC LIMIT 20')
+```
+
+```{r}
+ggplot(df_yt, aes(x = average_yearly_earnings, y = channel_type, fill = channel_type)) +
+  geom_boxplot(alpha = 1, position = position_dodge(1)) +
+  coord_cartesian(xlim = quantile(df_yt$average_yearly_earnings, c(0.08, 0.98), na.rm = TRUE))
+```
+
+Looking at our new box plot, Animals is also the channel type with the highest distribution of average yearly earnings, with News and Comedy behind it.
+
+Finally, I will find out which countries make up the most subscribed channels.
+
+```{r}
+# finding freqency a country appears in our data and creating a new data frame
+country_proportions <- table(df_yt$country)/length(df_yt$country)
+df_percentages <- data.frame(country_proportions*100) %>%
+  rename("country" = "Var1",
+         "percentage" = "Freq")
+# dropping "Unassigned" as it is not usable for our analysis
+df_percentages <- df_percentages[-(which(df_percentages$country == "Unassigned")),]
+# running query to find countries with highest frequency
+sqldf('SELECT * FROM df_percentages ORDER BY percentage DESC')
+```
+
+Our top five countries are the United States, India, Brazil, the United Kingdom, and Mexico. As QWERTY Media is already based in the United States and the primary language in the United Kingdom is English, a secondary channel for English speakers is unnecessary. QWERTY Media should instead consider making secondary channels in Hindi, Portuguese, and Spanish to potentially reach new audiences in India, Brazil, and Mexico.
+
+Now that analysis is complete, I will write my data to a new file to use in creating data visualizations in Tableau.
+
+```{r}
+write.csv(df_yt,'youtube_statistics_analyzed.csv', row.names = FALSE)
+```
+
+

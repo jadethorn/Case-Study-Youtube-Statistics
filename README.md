@@ -33,7 +33,7 @@ Kaggle has given the dataset a Usability score of 10.0 - it found no issues with
 
 My initial purview of the dataset showed many rows had broken characters and null values.
 
-![prepare_broken_names](https://github.com/jadethorn/Case-Study-Youtube-Statistics/assets/142852712/74379297-c30f-4967-897e-c441203d7b56)
+![prepare_broken_names](images/prepare_broken_names.png)
   
 ## Process
 
@@ -60,35 +60,35 @@ The full analysis phase can be found in the [R Markdown File](youtube_case_study
 In the analysis phase, I returned to the questions from the ask phase.
 In order to find how the frequency of uploads affected subscriber gains, I found the average weekly upload counts and the average weekly subscriber gains for each channel.
 
-![analyze_weekly_statistics](https://github.com/jadethorn/Case-Study-Youtube-Statistics/assets/142852712/666d5de9-9f29-4e48-a318-fa46e3ae3547)
+![analyze_weekly_statistics](images/analyze_weekly_statistics.png)
 
-![image](https://github.com/jadethorn/Case-Study-Youtube-Statistics/assets/142852712/03c83c56-369f-4d7f-b43a-13693769eed5)
+![analysis_subscriber_scatterplot](images/analysis_subscriber_scatterplot.png)
 
 
 The data shows there is barely a correlation between the amount of weekly uploads and subscribers gained. Plenty of channels uploading frequently are getting less subscribers than ones that do.
 
 Next was finding the distribution of subscribers gained in the last month.
 
-![analysis_plot_subscriber_gains](https://github.com/jadethorn/Case-Study-Youtube-Statistics/assets/142852712/7f28ed04-79cf-4905-be7a-291c2baacb0f)
+![analysis_plot_subscriber_gains](images/analysis_plot_subscriber_gains.png)
 
 
 The channel type with the highest distribution is Animals, with Comedy and People the next highest. Notably, Entertainment has several extreme outliers.  
 
 I then found the average yearly earnings for each channel.
 
-![analysis_average_yearly_earnings](https://github.com/jadethorn/Case-Study-Youtube-Statistics/assets/142852712/335315a6-204e-4dd7-a602-183942516404)
+![analysis_average_yearly_earnings](images/analysis_average_yearly_earnings.png)
 
 
 I made another boxplot showing the distribution of average yearly earnings.
 
-![analysis_plot_average_earnings](https://github.com/jadethorn/Case-Study-Youtube-Statistics/assets/142852712/05418f64-7f5f-40f9-afbc-2b85314f1a89)
+![analysis_plot_average_earnings](images/analysis_plot_average_earnings.png)
 
 
 Looking at our new box plot, Animals is also the channel type with the highest distribution of average yearly earnings, with News and Comedy behind it.
 
 Finally, the last step was finding the percentage of the top channels each country made up.
 
-![analysis_country_percentages](https://github.com/jadethorn/Case-Study-Youtube-Statistics/assets/142852712/4db5f2b6-3a96-43ef-a001-76a7ac04783a)
+![analysis_country_percentages](images/analysis_country_percentages.png)
 
 
 The top five countries are the United States, India, Brazil, the United Kingdom, and Mexico.
@@ -97,7 +97,7 @@ The top five countries are the United States, India, Brazil, the United Kingdom,
 
 [View the Dashboard on Tableau.](https://public.tableau.com/app/profile/jade.thornton/viz/YouTubeAnalysisCaseStudy/Dashboard1)
 
-![Dashboard 1](https://github.com/jadethorn/Case-Study-Youtube-Statistics/assets/142852712/75e89086-3087-47ad-8fc5-13ff713ee5e0)
+![Dashboard](images/dashboard.png)
 
 ## Act
 
